@@ -1,0 +1,42 @@
+# ═══════════════════════════════════════════════════════════════════════════════
+# MARKET INTELLIGENCE ENGINE - GIT IGNORE
+# ═══════════════════════════════════════════════════════════════════════════════
+
+# Environment variables (NEVER commit API keys!)
+.env
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+ENV/
+env/
+.venv/
+
+# Database
+data/
+*.db
+*.sqlite
+*.sqlite3
+
+# Logs
+logs/
+*.log
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Distribution
+dist/
+build/
+*.egg-info/

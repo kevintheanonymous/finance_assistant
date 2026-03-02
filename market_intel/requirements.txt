@@ -1,0 +1,30 @@
+# ═══════════════════════════════════════════════════════════════════════════════
+# MARKET INTELLIGENCE ENGINE - DEPENDENCIES
+# ═══════════════════════════════════════════════════════════════════════════════
+# Install with: pip install -r requirements.txt
+
+# Core Framework
+python-dotenv>=1.0.0          # Environment variable management
+apscheduler>=3.10.0           # Job scheduling (24/7 execution)
+httpx>=0.25.0                 # Async HTTP client (faster than requests)
+aiohttp>=3.9.0                # Async HTTP for webhooks
+
+# Database
+sqlalchemy>=2.0.0             # ORM for SQLite/PostgreSQL
+aiosqlite>=0.19.0             # Async SQLite support
+
+# AI & NLP
+openai>=1.0.0                 # GPT-4 sentiment analysis
+
+# Data Processing (no pandas - using pure Python for compatibility)
+feedparser>=6.0.0             # SEC RSS feed parsing
+beautifulsoup4>=4.12.0        # HTML parsing for SEC filings
+lxml>=5.0.0                   # Fast XML parser
+
+# Utilities
+loguru>=0.7.0                 # Better logging
+tenacity>=8.2.0               # Retry logic for API calls
+pytz>=2024.1                  # Timezone handling
+
+# Optional: Twitter/X integration
+# tweepy>=4.14.0              # Uncomment if using Twitter API

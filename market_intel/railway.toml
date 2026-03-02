@@ -1,0 +1,15 @@
+# Railway.app Configuration
+# https://docs.railway.app/reference/config-as-code
+
+[build]
+builder = "nixpacks"
+
+[deploy]
+startCommand = "python main.py"
+restartPolicyType = "always"
+restartPolicyMaxRetries = 5
+healthcheckPath = ""
+healthcheckTimeout = 30
+
+[service]
+internalPort = 8080

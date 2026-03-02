@@ -16,6 +16,7 @@ from tenacity import retry, stop_after_attempt, wait_exponential
 from .config import AlertConfig
 from .database import DatabaseOperations
 from .scoring import Signal
+from .trading_guide import generate_trading_guide, format_trading_guide_telegram, format_trading_guide_discord
 
 # ─────────────────────────────────────────────────────────────────────────────────
 # ALERT TEMPLATES
@@ -39,11 +40,7 @@ DISCORD_TEMPLATE = """
 **INTERPRETATION:**
 ─────────────────────────────────────
 {interpretation}
-
-─────────────────────────────────────
-**OPERATOR ACTION REQUIRED:**
-─────────────────────────────────────
-Review and decide. System does not auto-execute.
+{trading_guide}
 
 ═══════════════════════════════════════
 """
@@ -55,8 +52,9 @@ TELEGRAM_TEMPLATE = """
 <b>Time:</b> {timestamp} UTC
 
 {components}
+{trading_guide}
 
-⚡ <i>Anomaly detected. Review required.</i>
+⚡ <i>Signal detected. Review trading guide above.</i>
 """
 
 # ─────────────────────────────────────────────────────────────────────────────────
@@ -222,6 +220,16 @@ class AlertDispatcher:
         # Generate interpretation
         interpretation = self._generate_interpretation(signal)
         
+        # Generate trading guide
+        guide = generate_trading_guide(
+            signal_score=signal.final_score,
+            asset_symbol=signal.asset_symbol,
+            asset_type=signal.asset_type,
+            component_scores=signal.component_scores,
+            current_price=signal.raw_data.get("current_price") if signal.raw_data else None
+        )
+        trading_guide_text = format_trading_guide_discord(guide, signal.asset_symbol)
+        
         return DISCORD_TEMPLATE.format(
             signal_type_emoji=signal_type_emoji,
             signal_type=signal_type_text,
@@ -230,7 +238,8 @@ class AlertDispatcher:
             asset_type=signal.asset_type.upper(),
             timestamp=signal.detected_at.strftime("%Y-%m-%d %H:%M"),
             components=components_text,
-            interpretation=interpretation
+            interpretation=interpretation,
+            trading_guide=trading_guide_text
         )
     
     # ─────────────────────────────────────────────────────────────────────────────
@@ -306,6 +315,16 @@ class AlertDispatcher:
         
         components_text = "\n".join(components_lines)
         
+        # Generate trading guide
+        guide = generate_trading_guide(
+            signal_score=signal.final_score,
+            asset_symbol=signal.asset_symbol,
+            asset_type=signal.asset_type,
+            component_scores=signal.component_scores,
+            current_price=signal.raw_data.get("current_price") if signal.raw_data else None
+        )
+        trading_guide_text = format_trading_guide_telegram(guide, signal.asset_symbol)
+        
         return TELEGRAM_TEMPLATE.format(
             signal_type_emoji=signal_type_emoji,
             signal_type=signal_type_text,
@@ -313,7 +332,8 @@ class AlertDispatcher:
             symbol=signal.asset_symbol,
             asset_type=signal.asset_type.upper(),
             timestamp=signal.detected_at.strftime("%Y-%m-%d %H:%M"),
-            components=components_text
+            components=components_text,
+            trading_guide=trading_guide_text
         )
     
     # ─────────────────────────────────────────────────────────────────────────────

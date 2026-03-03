@@ -427,6 +427,146 @@ class DatabaseOperations:
             session.close()
     
     # ─────────────────────────────────────────────────────────────────────────────
+    # BOT QUERY OPERATIONS
+    # ─────────────────────────────────────────────────────────────────────────────
+    
+    @staticmethod
+    def get_recent_signals(limit: int = 10, hours: int = 24) -> List[dict]:
+        """Get recent signals as dictionaries for bot display"""
+        session = SessionLocal()
+        try:
+            cutoff = datetime.utcnow() - timedelta(hours=hours)
+            signals = session.query(Signal).filter(
+                Signal.detected_at >= cutoff
+            ).order_by(Signal.detected_at.desc()).limit(limit).all()
+            
+            return [
+                {
+                    "symbol": s.asset_symbol,
+                    "asset_type": s.asset_type,
+                    "score": s.signal_score,
+                    "signal_type": s.signal_type,
+                    "detected_at": s.detected_at.strftime("%Y-%m-%d %H:%M"),
+                    "insider_score": s.insider_score,
+                    "options_score": s.options_score,
+                    "whale_score": s.whale_score,
+                    "sentiment_score": s.sentiment_score,
+                }
+                for s in signals
+            ]
+        finally:
+            session.close()
+    
+    @staticmethod
+    def get_top_signals(limit: int = 3, hours: int = 48) -> List[dict]:
+        """Get top signals by score"""
+        session = SessionLocal()
+        try:
+            cutoff = datetime.utcnow() - timedelta(hours=hours)
+            signals = session.query(Signal).filter(
+                Signal.detected_at >= cutoff,
+                Signal.signal_score >= 60
+            ).order_by(Signal.signal_score.desc()).limit(limit).all()
+            
+            return [
+                {
+                    "symbol": s.asset_symbol,
+                    "asset_type": s.asset_type,
+                    "score": s.signal_score,
+                    "signal_type": s.signal_type,
+                    "detected_at": s.detected_at.strftime("%Y-%m-%d %H:%M"),
+                }
+                for s in signals
+            ]
+        finally:
+            session.close()
+    
+    @staticmethod
+    def get_signals_by_type(asset_type: str, limit: int = 5, hours: int = 48) -> List[dict]:
+        """Get signals filtered by asset type (equity or crypto)"""
+        session = SessionLocal()
+        try:
+            cutoff = datetime.utcnow() - timedelta(hours=hours)
+            signals = session.query(Signal).filter(
+                Signal.detected_at >= cutoff,
+                Signal.asset_type == asset_type
+            ).order_by(Signal.signal_score.desc()).limit(limit).all()
+            
+            return [
+                {
+                    "symbol": s.asset_symbol,
+                    "asset_type": s.asset_type,
+                    "score": s.signal_score,
+                    "signal_type": s.signal_type,
+                }
+                for s in signals
+            ]
+        finally:
+            session.close()
+    
+    @staticmethod
+    def get_signals_by_component(component: str, min_score: float = 50, limit: int = 5) -> List[dict]:
+        """Get signals with high scores in a specific component"""
+        session = SessionLocal()
+        try:
+            cutoff = datetime.utcnow() - timedelta(hours=72)
+            
+            # Map component names to columns
+            column_map = {
+                "insider_cluster": Signal.insider_score,
+                "options_anomaly": Signal.options_score,
+                "whale_movement": Signal.whale_score,
+                "sentiment_score": Signal.sentiment_score,
+                "social_momentum": Signal.sentiment_score,  # Use sentiment as proxy
+                "congressional": Signal.insider_score,  # Use insider as proxy for now
+            }
+            
+            column = column_map.get(component, Signal.signal_score)
+            
+            signals = session.query(Signal).filter(
+                Signal.detected_at >= cutoff,
+                column >= min_score
+            ).order_by(column.desc()).limit(limit).all()
+            
+            return [
+                {
+                    "symbol": s.asset_symbol,
+                    "asset_type": s.asset_type,
+                    "score": s.signal_score,
+                    "insider_score": s.insider_score,
+                    "options_score": s.options_score,
+                    "whale_score": s.whale_score,
+                    "details": f"Component score: {getattr(s, component.replace('_cluster', '_score').replace('_anomaly', '_score').replace('_movement', '_score'), 0):.0f}",
+                }
+                for s in signals
+            ]
+        finally:
+            session.close()
+    
+    @staticmethod
+    def count_recent_signals(hours: int = 24) -> int:
+        """Count signals in the last N hours"""
+        session = SessionLocal()
+        try:
+            cutoff = datetime.utcnow() - timedelta(hours=hours)
+            return session.query(Signal).filter(Signal.detected_at >= cutoff).count()
+        finally:
+            session.close()
+    
+    @staticmethod
+    def count_bullish_signals(hours: int = 24) -> int:
+        """Count bullish signals (sentiment > 60) in the last N hours"""
+        session = SessionLocal()
+        try:
+            cutoff = datetime.utcnow() - timedelta(hours=hours)
+            return session.query(Signal).filter(
+                Signal.detected_at >= cutoff,
+                Signal.sentiment_score > 60
+            ).count()
+        finally:
+            session.close()
+    
+    # ─────────────────────────────────────────────────────────────────────────────
     # MAINTENANCE OPERATIONS
     # ─────────────────────────────────────────────────────────────────────────────
     
